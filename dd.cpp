@@ -12,11 +12,11 @@ using namespace std;
 char userid[32];
 void border();
 int menu(string menus[],int options,char* ch);
-void gotoxy(short a, short b) //Custom gotoxy() function
+void gotoxy(short a, short b) 
 {
-    COORD coordinates; //Data type of co-ordinates
-    coordinates.X = a; //Assign value to X- Co-ordinate
-    coordinates.Y = b; //Assign value to Y Co-ordinate
+    COORD coordinates; 
+    coordinates.X = a; 
+    coordinates.Y = b; 
  
 SetConsoleCursorPosition(
         GetStdHandle(STD_OUTPUT_HANDLE), coordinates);
@@ -196,7 +196,7 @@ void Calculator::design()
 	  val1=pow(val1,val2);
 		gotoxy(24,10);cout<<val1<<"            ";
 			gotoxy(49,10);cout<<"       ";
-		 gotoxy(30,17);cout<<"Press any key to continue";
+		 gotoxy(30,17);cout<<"Press any ch to continue";
 		 gotoxy(30,18);cout<<"Press'C' to clear";
 			 gotoxy(30,19);cout<<"Press 'M' for menu";
 			 ch=getch();
@@ -445,8 +445,8 @@ void Contacts::Display()
 //LOGIN START
 int login()
 {border();
-char password[32],ch;
-int i,n=0;
+char password[32],ch,user[][10]={"Admin","PASSWORD"};
+int i=0,n=0;
 long j;
 system("cls");
 border();
@@ -464,30 +464,30 @@ cout<<"PASSWORD:"<<" ";
 while(TRUE)
 {
 ch=getch();
-if((ch>='a'&&ch<='z')||(ch>='A'&&ch<='Z')||(ch>='0'&&ch<='9'))
-{
-password[i]=ch;
-++i;
-cout<<"*";
-}
-else if(ch==8)
+if(ch==8 && i!=0)
 {i--;
 password[i]=' ';
-cout<<ch;
+cout<<'\b';
+cout<<' ';
+cout<<'\b';	
 }
 else if(ch==13)
 {
 password[i]='\0';
 gotoxy(27,15);
 cout<<"SIGNING IN..."<<endl;
-for(j=0;j<500000000;j++);
+for(long k;k<5000000;k++);
 break;
 }
+else
+{
+password[i]=ch;
+cout<<password[i];
+++i;
+// cout<<"*";
 }
-if(strcmpi(userid,"Admin")==0&&strcmp(password,"PASSWORD")==0||
-   strcmpi(userid,"Pranav")==0&&strcmp(password,"DECLAN")==0||
-   strcmpi(userid,"Allen")==0&&strcmp(password,"RUBIKS")==0||
-   strcmpi(userid,"Gopi")==0&&strcmp(password,"2001346")==0)
+}
+if(strcmp(userid,user[0])&&strcmp(password,user[1]))
 {
 system("cls");
 border();gotoxy(25,2);
@@ -535,7 +535,7 @@ void heading(char ch[])
 struct POS
 {int X;
  int Y;
-}Pos[12];
+};
 void border()
 {int i;
 	gotoxy(0,0);
@@ -544,7 +544,7 @@ void border()
 		cout<<"-";
 	gotoxy(80,0);
    cout<<"+";
-	for(i=2;i<24;i++)
+	for(i=1;i<24;i++)
 	{	gotoxy(0,i);
 		cout<<"|";
 		gotoxy(80,i);
@@ -663,7 +663,7 @@ if(Time->tm_sec<10)
 
  //TIME END
 
- //CON START
+ //CONV START
 void con()
 {system("cls");
  int x,l,a,s,w;
@@ -1360,25 +1360,25 @@ switch(menu(CONV,5,"CONVERTOR"))
 void border_snake()
 {system("cls");
  border();
- int i;
+ int head;
  gotoxy(40,2);
  cout<<"SNAKE";
 	gotoxy(4,4);
    cout<<"+";
-	for(i=5;i<76;i++)
-		{gotoxy(i,4);cout<<"-";}
+	for(head=5;head<76;head++)
+		{gotoxy(head,4);cout<<"-";}
 	gotoxy(76,4);
    cout<<"+";
-	for(i=5;i<20;i++)
-	{	gotoxy(4,i);
+	for(head=5;head<20;head++)
+	{	gotoxy(4,head);
 		cout<<"|";
-		gotoxy(76,i);
+		gotoxy(76,head);
 		cout<<"|";
 	}
    gotoxy(4,20);
    cout<<"+";
-	for(i=5;i<76;i++)
-	{	gotoxy(i,20);
+	for(head=5;head<76;head++)
+	{	gotoxy(head,20);
 		cout<<"-";
 	}
    gotoxy(76,20);
@@ -1396,69 +1396,80 @@ void border_snake()
 	gotoxy(60,23);
 	cout<<"O for Options";
 }
-
+void updateState(int x)
+{
+	char state[2][20]={"Playing","Paused "};
+	gotoxy(37,22);
+       cout<<state[x];
+}
 void snake()
-{ srand(time(0));int s=4;
+{ srand(time(0));int s=4,score=0,lives=3;char ch;
  START:
- const int MAXlength=15;int score=0,lives=3;
- long k;
+ const int MAXlength=140;
+ const long k=100000;
   RESPAWN:
+  int buffer=4;
 border_snake();
  gotoxy(21,22);
 cout<<lives;
 gotoxy(61,22);
 cout<<score;
 
-  char STAT[2][20]={"Playing","Paused "};
-  POS POS[14];
-  gotoxy(37,22);
-  cout<<STAT[0];
-  int X=40,Y=11,l=4,i=0,pointx,pointy;
+  
+  POS pos[140],POS[10];
+  updateState(1);
+  int X=40,Y=11,currentLength=4,head=0,pointX,pointY;
   gotoxy(X,Y);
-  POS[0].X=X;POS[0].Y=Y;
+  pos[0].X=X;pos[0].Y=Y;
   cout<<"O";
-  int z=1,x=0,y=0,p=0,q=0,F=1;
-  while(z)
-  {
-    if(p)
-      {pointx=random(71)+5;
-       pointy=random(14)+5;
-       gotoxy(pointx,pointy);
+  int verticalMovement=0,horizontalMovement=0;
+  bool spawnPoint=false,playState=false,firstHit=true;
+  while(true)
+  {	POINT:
+  //point spawning
+    if(spawnPoint)
+      {pointX=random(71)+5;
+       pointY=random(14)+5;
+	   for(int j=0;j<currentLength-1;j++)
+     { if(pointX==pos[j].X && pointY==pos[j].Y)
+		goto POINT;
+     }
+       gotoxy(pointX,pointY);
 		 cout<<"$";
-       p=0;
+       spawnPoint=false;
  		}
-   if(kbhit())
-    { if(F)
-    {F=0;p=1;}
-     char ch=getch();
-     if(ch=='A')
-      {x=-1;y=0;q=1;
-       gotoxy(37,22);
-       cout<<STAT[0];
+      //input detection
+   if(kbhit())	
+    { ch=getch();
+	 if(firstHit)
+    	{firstHit=0;spawnPoint=true;}
+     if(ch=='A'||ch=='a'&&horizontalMovement==0)
+      {horizontalMovement=-1; verticalMovement=0; playState=1;
+	   usleep(k);
+       updateState(0);
       }
-     else if(ch=='W')
-      {x=0;y=-1;q=1;
-       for(k=0;k<1000000;k++);
-       gotoxy(37,22);
-       cout<<STAT[0];
+     else if(ch=='W'||ch=='w'&&verticalMovement==0)
+      {horizontalMovement=0; verticalMovement=-1; playState=1;
+	   usleep(k);
+      usleep(k);
+       updateState(0);
       }
-     else if(ch=='D')
-     {x=1;y=0;q=1;
-      gotoxy(37,22);
-      cout<<STAT[0];
+     else if(ch=='D'||ch=='d'&&horizontalMovement==0)
+     {horizontalMovement=1; verticalMovement=0; playState=1;
+	  usleep(k);
+      updateState(0);
      }
-     else if(ch=='S')
-     {x=0;y=1;q=1;
-      for(k=0;k<1000000;k++);
-		gotoxy(37,22);
-      cout<<STAT[0];
+     else if(ch=='S'||ch=='s'&&verticalMovement==0)
+     {horizontalMovement=0; verticalMovement=1; playState=1;
+      usleep(k);
+      usleep(k);
+	  updateState(0);
      }
-     else if(ch=='P')
-     {x=0;y=0;q=0;
-      gotoxy(37,22);
-      cout<<STAT[1];
+     else if(ch=='P'||ch=='p')
+     {horizontalMovement=0; verticalMovement=0; playState=0;
+      updateState(0);
      }
-     else if(ch=='O')
+     else if(ch=='O'||ch=='o')
      {system("cls");border();
       gotoxy(20,2);
       cout<<"Enter Speed(9(slowest),1(fastest))";
@@ -1467,17 +1478,18 @@ cout<<score;
       goto START;
     }
 }
-  X=X+x;
-  Y=Y+y;
+  X=X+horizontalMovement;
+  Y=Y+verticalMovement;
+  //death by border
   if(X==3||X==77||Y==3||Y==21)
    {DEATH:
     X=0;Y=0;lives--;
     gotoxy(21,22);
     cout<<lives;
-    gotoxy(pointx,pointy);
+    gotoxy(pointX,pointY);
     cout<<" ";
-    for(int j=0;j<l;j++)
-    {gotoxy(POS[j].X,POS[j].Y);
+    for(int j=0;j<currentLength;j++)
+    {gotoxy(pos[j].X,pos[j].Y);
      cout<<" ";
     }
 border_snake();
@@ -1486,48 +1498,56 @@ if(lives==0)
     goto RESPAWN;
    }
   else
-   {if(X==pointx && Y==pointy)
+   {if(X==pointX && Y==pointY)
     {
      score=score+100;
      gotoxy(61,22);
      cout<<score;
-     if(l<MAXlength)
-     {p=1;l++;}
+     if(currentLength<MAXlength)
+     {spawnPoint=true;currentLength++;}
      else
-     {p=1;}
+     {spawnPoint=true;}
     }
     //OUTPUT DELAY
-    for(k=0;k<10000000*s;k++);
-    if(i<l)
-     {POS[i].X=X;
-      POS[i].Y=Y;
-      i++;
+//    for(long k;k<10000000;k++);
+   usleep(k);
+    if(head<currentLength)
+     {pos[head].X=X;
+      pos[head].Y=Y;
+      head++;
+	  
      }
-    else
-    if(q)
-     {gotoxy(POS[0].X,POS[0].Y);
+    if(playState&&buffer)
+     {gotoxy(pos[0].X,pos[0].Y);
       cout<<" ";
-      for(int j=0;j<l-1;j++)
-       {POS[j].X=POS[j+1].X;
-        POS[j].Y=POS[j+1].Y;
+      int j;
+      for(int j=0;j<currentLength;j++)
+       {pos[j].X=pos[j+1].X;
+        pos[j].Y=pos[j+1].Y;
        }
-    //   POS[j].X=X;
-    //   POS[j].Y=Y;
+      POS[j].X=X;
+      POS[j].Y=Y;
      }
-    for(int j=0;j<l-1;j++)
-     { if(POS[l-1].X==POS[j].X &&  POS[l-1].Y==POS[j].Y && q)
+	//Death By Touch
+    for(int j=0;j<head-1&&buffer==0;j++)
+     { if(pos[head].X==pos[j].X &&  pos[head].Y==pos[j].Y && playState)
        goto DEATH;
      }
    gotoxy(X,Y);
    cout<<"O";
+   if(buffer>0)
+     {
+      buffer--;
+     }
+	  else buffer=0;
   }
 }
 GAMEOVER:
 gotoxy(36,11);
 cout<<"GAME OVER";
-for(k=0;k<10000000;k++);
+getch();
+usleep(k);
 }
-
 void SNAKE()
 {
 border_snake();
@@ -1549,7 +1569,7 @@ if(strcmp(ch,"CALCULATOR")==0)
   }
  int t=0,temp,opt=1,y;
  while(true)
-  { int y=0;
+  { y=0;
     gotoxy(30,6+t);
     cout<<"+";
     gotoxy(50,6+t);
@@ -1558,11 +1578,10 @@ if(strcmp(ch,"CALCULATOR")==0)
     cout<<"+";
     gotoxy(50,8+t);
     cout<<"+";
-    for(long z=0;z<10000000;z++);
-
+    for(long k;k<10000000;k++);
     if(kbhit())
      {char ch=getch();
-       if(ch=='W')
+       if(ch=='W' || ch=='w')
         {if(t!=0)
          {temp=t;
           t=t-2;
@@ -1570,7 +1589,7 @@ if(strcmp(ch,"CALCULATOR")==0)
           opt--;
          }
          }
-       else if(ch=='S')
+       else if(ch=='S' || ch=='s')
        {if(t<=(2*(options-1)-1))
          {temp=t;
           t=t+2;
@@ -1627,7 +1646,7 @@ border();int x=0;z=0;
 {  GAMES:
 string games[]={"SNAKES","BACK"};
           switch(menu(games,2,"GAMES"))
-           {case 1:SNAKE();
+           {case 1:SNAKE();goto GAMES;
             case 2:goto BACK;
            };
 }
@@ -1638,3 +1657,8 @@ goto RE;
 return 0;
 }
 
+// int main()
+// {
+// 	SNAKE();
+// 	return 0;
+// }
